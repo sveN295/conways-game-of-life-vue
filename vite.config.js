@@ -5,6 +5,7 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: "/conways-game-of-life-vue/",
   plugins: [
     vue(),
   ],
