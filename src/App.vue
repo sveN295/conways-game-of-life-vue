@@ -3,22 +3,22 @@
 
   var canvasWidth = ref(100);
   var canvasHeight = ref(100);
+
+  var probability = ref(10);
+  const speed = 300;
+  const cellColor = "green"
+
   var canvasContext = null;
   var nextFrameContext = null;
-
-  var probability = ref(25);
-  const speed = 300;
-
-  const transparentBlack = "rgba(0, 0, 0, 0)";
 
   var iteration;
 
   onMounted(() => {
     var canvas = document.getElementById("canvas");
-    canvasContext = canvas.getContext("2d");
+    canvasContext = canvas.getContext("2d", { alpha: false, willReadFrequently: true });
 
     var nextFrame = document.getElementById("nextFrame");
-    nextFrameContext = nextFrame.getContext("2d");
+    nextFrameContext = nextFrame.getContext("2d", { alpha: false, willReadFrequently: true });
   })
 
   function startState() {
@@ -42,7 +42,7 @@
     for (let y = 0; y < canvasHeight.value; y++) {
       for (let x = 0; x < canvasWidth.value; x++) {
         let neighbourCellCount = 0;
-        const isAlive = canvasContext.getImageData(x, y, 1, 1).data[0] === 255;
+        const isAlive = imageData.data[getPixelIndex(x, y)] === 255;
         
         // 1 2 3
         // 4 x 5
@@ -70,10 +70,9 @@
             element[1] = element[1] - canvasHeight.value;
           }
 
-          const pixel = canvasContext.getImageData(element[0], element[1], 1, 1);
-          const data = pixel.data;
+          const pixel = imageData.data[getPixelIndex(element[0], element[1])];
 
-          if (data[0] === 255) {
+          if (pixel === 255) {
             neighbourCellCount++;
           }
         })
@@ -114,6 +113,16 @@
     clearInterval(iteration);
     iteration = null;
   }
+
+  // Calculates the index of a pixel in a canvas image data array
+  function getPixelIndex(x, y) {
+    return y * (canvasWidth.value * 4) + x * 4
+  }
+
+  function onInput() {
+      // this.currentValue is a string because HTML is weird
+      this.$emit('input', parseInt(probability.value));
+  }
 </script>
 
 <template>
@@ -127,6 +136,11 @@
       </div>
       <div class="flex-container" id="controls">
         <button class="button" @click="startState">Generate</button>
+        <div class="slider-container">
+          <div><strong>Initial living Cells</strong></div>
+          <input type="range" min="10" max="90" class="slider" v-model="probability" @input="onInput">
+          <span><strong>{{ probability }}%</strong></span>
+        </div>
         <button class="button" @click="start">Start</button>
         <button class="button" @click="step">Step</button>
         <button class="button" @click="stop">Stop</button>
@@ -142,7 +156,6 @@
 
   canvas {
     border: 1px solid black;
-    background-color: black;
   }
 
   .container {
@@ -156,7 +169,7 @@
     display: flex;
     gap: 10px;
     margin-block-end: 10px;
-    justify-content: center;
+    justify-content: space-around;
   }
 
   #nextFrame {
